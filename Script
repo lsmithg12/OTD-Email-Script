@@ -1,0 +1,46 @@
+// @ts-nocheck
+// creates timer to run the script every day at 7 am CT/Chicago 
+
+function createTriggers() {
+   var days = [ScriptApp.WeekDay.MONDAY, ScriptApp.WeekDay.TUESDAY,
+               ScriptApp.WeekDay.WEDNESDAY, ScriptApp.WeekDay.THURSDAY,                                            
+               ScriptApp.WeekDay.FRIDAY];
+   for (var i=0; i<days.length; i++) {
+      ScriptApp.newTrigger("sendEmails2")
+               .timeBased().onWeekDay(days[i])
+               .atHour(7).create();
+   }
+}
+
+
+// This constant is written in column D for rows for which an email
+// has been sent successfully.
+var EMAIL_SENT = "EMAIL_SENT";
+
+function sendEmails2() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("EmailNotification");
+  var startRow = 3;  // First row of data to process
+  var numRows = 10000;   // Number of rows to process
+  // Fetch the range of cells 
+  var dataRange = sheet.getRange(startRow,1,numRows,5);
+  // Fetch values for each row in the Range.
+  var data = dataRange.getValues();
+  for (var i = 0; i < data.length; ++i) {
+    var row = data[i];
+    var emailAddress = row[0];  // First column 
+    var subject = row[1];       // Second column
+    var message = row[2];       // Third column
+    var message2 = row[3];      // Fourth column
+    var emailSent = row[4];     // Fifth column
+   
+    // checks to see if message is blank and if email has already been sent
+    if (message != "" && emailSent != EMAIL_SENT) {
+      MailApp.sendEmail(emailAddress,"Kenosha OTD for: "+subject, "\nTotal Cases: "+message+  
+       "\nThe last local route release time was: "+message2+ "\n***SpreadSheetShareLink***");
+      sheet.getRange(startRow + i, 5).setValue(EMAIL_SENT);}
+      
+    // Make sure the cell is updated right away in case the script is interrupted
+    SpreadsheetApp.flush();
+  }
+    
+}
